@@ -6,7 +6,7 @@ from datetime import datetime
 
 receipt_app = Flask(__name__)
 receipt_in_memory = {}
-receipt_lookup = {}
+duplicate_receipt_check = {}
 
 def calculate_points(data):
     points = 0
@@ -37,15 +37,15 @@ def generate_key(data):
 def generate_id():
     data = request.get_json()
     receipt_key = generate_key(data)
-    if receipt_key in receipt_lookup:
-        return jsonify({"id": receipt_lookup[receipt_key], "message": "Already Processed"}), 200
+    if receipt_key in duplicate_receipt_check:
+        return jsonify({"id": duplicate_receipt_check[receipt_key], "message": "Already Processed"}), 200
     receipt_id = str(uuid.uuid4())
     try:
         data["points"] = calculate_points(data)
     except (ValueError, KeyError) as err:
         return jsonify({"error": "Invalid data", "message": str(err)}), 400
     receipt_in_memory[receipt_id] = data
-    receipt_lookup[receipt_key] = receipt_id
+    duplicate_receipt_check[receipt_key] = receipt_id
     return jsonify({"id": receipt_id}), 200
 
 @receipt_app.route("/receipts/<id>/points", methods=["GET"])
